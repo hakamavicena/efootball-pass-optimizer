@@ -125,16 +125,38 @@ export const simulateMatch = (currentState: MatchState): MatchResult => {
     return { goalScored: true, newState: currentState };
   }
 
-  // Execute pass - update ball holder and move players slightly
+  // Execute pass - update ball holder and move players
   const newPlayers = players.map(player => {
     if (player.id === bestPass.targetPlayer.id) {
       return { ...player }; // New ball holder
     }
-    // Simple movement simulation
+    
+    // Opponent behavior: press towards ball holder
+    if (player.team !== ballHolder.team) {
+      const newBallHolder = players.find(p => p.id === bestPass.targetPlayer.id)!;
+      
+      // Calculate direction towards new ball holder
+      const dx = newBallHolder.x - player.x;
+      const dy = newBallHolder.y - player.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // Move towards ball holder (but not too fast)
+      const moveSpeed = player.position === 'GK' ? 1 : 2; // Goalkeeper moves slower
+      const moveX = distance > 5 ? (dx / distance) * moveSpeed : 0;
+      const moveY = distance > 5 ? (dy / distance) * moveSpeed : 0;
+      
+      return {
+        ...player,
+        x: Math.max(5, Math.min(95, player.x + moveX)),
+        y: Math.max(5, Math.min(95, player.y + moveY))
+      };
+    }
+    
+    // Home team players: slight random movement
     return {
       ...player,
-      x: Math.max(5, Math.min(95, player.x + (Math.random() - 0.5) * 3)),
-      y: Math.max(5, Math.min(95, player.y + (Math.random() - 0.5) * 3))
+      x: Math.max(5, Math.min(95, player.x + (Math.random() - 0.5) * 2)),
+      y: Math.max(5, Math.min(95, player.y + (Math.random() - 0.5) * 2))
     };
   });
 
