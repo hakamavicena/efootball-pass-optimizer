@@ -1,96 +1,195 @@
 
 import React, { useState, useEffect } from 'react';
-import FootballField from '@/components/FootballField';
-import PassScoreDisplay from '@/components/PassScoreDisplay';
-import { generatePlayers, simulateMatch } from '@/utils/matchSimulation';
-import { Player, MatchState } from '@/types/football';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import SimpleField from '@/components/SimpleField';
+import PassCalculationPanel from '@/components/PassCalculationPanel';
+import { SimulationState, PassOption } from '@/types/football';
+import { FORMATIONS } from '@/utils/formations';
+import { 
+  createTeams, 
+  calculatePassOptions, 
+  findNearestOpponents, 
+  moveOpponentsTowardsBall 
+} from '@/utils/simpleSimulation';
 
 const Index = () => {
-  const [matchState, setMatchState] = useState<MatchState | null>(null);
-  const [isRunning, setIsRunning] = useState(false);
-  const [passCount, setPassCount] = useState(0);
-  const [goalScored, setGoalScored] = useState(false);
+  const [formation, setFormation] = useState('4-3-3');
+  const [simulation, setSimulation] = useState<SimulationState>({
+    phase: 'setup',
+    players: [],
+    ballHolder: null,
+    passOptions: [],
+    pressureOpponents: []
+  });
+  const [hoveredPass, setHoveredPass] = useState<PassOption | null>(null);
 
   const startSimulation = () => {
-    const players = generatePlayers();
-    const initialState: MatchState = {
+    const players = createTeams(formation);
+    const randomPlayer = players[Math.floor(Math.random() * players.length)];
+    
+    setSimulation({
+      phase: 'playing',
       players,
-      ballHolder: players.find(p => p.team === 'home' && p.position === 'CMF')!,
+      ballHolder: randomPlayer,
       passOptions: [],
-      currentPass: 0
-    };
-    setMatchState(initialState);
-    setIsRunning(true);
-    setPassCount(0);
-    setGoalScored(false);
+      pressureOpponents: []
+    });
+  };
+
+  const stepSimulation = () => {
+    if (simulation.phase === 'pressure' && simulation.passOptions.length > 0) {
+      // Find the pass with lowest score (best option)
+      const bestPass = simulation.passOptions.reduce((best, current) => 
+        current.score < best.score ? current : best
+      );
+      
+      console.log(`Ball passed from ${simulation.ballHolder?.name} to ${bestPass.targetPlayer.name}`);
+      console.log(`Pass score: ${bestPass.score.toFixed(2)}`);
+      
+      setSimulation(prev => ({
+        ...prev,
+        phase: 'finished',
+        ballHolder: bestPass.targetPlayer
+      }));
+    }
   };
 
   const resetSimulation = () => {
-    setMatchState(null);
-    setIsRunning(false);
-    setPassCount(0);
-    setGoalScored(false);
+    setSimulation({
+      phase: 'setup',
+      players: [],
+      ballHolder: null,
+      passOptions: [],
+      pressureOpponents: []
+    });
+    setHoveredPass(null);
   };
 
+  // Handle opponent pressure after 3 seconds
   useEffect(() => {
-    if (!isRunning || !matchState || goalScored) return;
+    if (simulation.phase === 'playing' && simulation.ballHolder) {
+      const timer = setTimeout(() => {
+        const opponents = simulation.players.filter(p => p.team !== simulation.ballHolder!.team);
+        const nearestOpponents = findNearestOpponents(simulation.ballHolder!, opponents);
+        
+        // Start moving opponents toward ball holder
+        const interval = setInterval(() => {
+          setSimulation(prev => {
+            if (prev.phase !== 'playing') {
+              clearInterval(interval);
+              return prev;
+            }
 
-    const interval = setInterval(() => {
-      const result = simulateMatch(matchState);
-      
-      if (result.goalScored) {
-        setGoalScored(true);
-        setIsRunning(false);
-        console.log(`Goal scored after ${passCount} passes!`);
-      } else {
-        setMatchState(result.newState);
-        setPassCount(prev => prev + 1);
-      }
-    }, 2000); // 2 second intervals
+            const updatedOpponents = moveOpponentsTowardsBall(prev.ballHolder!, nearestOpponents);
+            const updatedPlayers = prev.players.map(player => {
+              const updatedOpp = updatedOpponents.find(opp => opp.id === player.id);
+              return updatedOpp || player;
+            });
 
-    return () => clearInterval(interval);
-  }, [isRunning, matchState, passCount, goalScored]);
+            // Check if opponents are close enough (1 meter = ~3 units on our scale)
+            const ballHolder = prev.ballHolder!;
+            const closestDistance = Math.min(
+              ...updatedOpponents.map(opp => {
+                const dx = ballHolder.x - opp.x;
+                const dy = ballHolder.y - opp.y;
+                return Math.sqrt(dx * dx + dy * dy);
+              })
+            );
+
+            if (closestDistance <= 3) {
+              clearInterval(interval);
+              
+              // Calculate pass options
+              const teammates = updatedPlayers.filter(p => 
+                p.team === ballHolder.team && p.id !== ballHolder.id
+              );
+              const allOpponents = updatedPlayers.filter(p => p.team !== ballHolder.team);
+              const passOptions = calculatePassOptions(ballHolder, teammates, allOpponents);
+              
+              return {
+                ...prev,
+                phase: 'pressure',
+                players: updatedPlayers,
+                passOptions,
+                pressureOpponents: updatedOpponents
+              };
+            }
+
+            return {
+              ...prev,
+              players: updatedPlayers
+            };
+          });
+        }, 100);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [simulation.phase, simulation.ballHolder]);
 
   return (
     <div className="min-h-screen bg-green-100 p-4">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-center mb-6">eFootball Pass Optimizer</h1>
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold text-center mb-6">Simple eFootball Pass Simulation</h1>
         
         <div className="flex gap-4 justify-center mb-4">
-          <button 
-            onClick={startSimulation}
-            disabled={isRunning}
-            className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+          <Select value={formation} onValueChange={setFormation} disabled={simulation.phase !== 'setup'}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.keys(FORMATIONS).map(form => (
+                <SelectItem key={form} value={form}>{form}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Button 
+            onClick={startSimulation} 
+            disabled={simulation.phase !== 'setup'}
+            className="bg-blue-500 hover:bg-blue-600"
           >
-            Start Simulation
-          </button>
-          <button 
+            Start
+          </Button>
+          
+          <Button 
+            onClick={stepSimulation} 
+            disabled={simulation.phase !== 'pressure'}
+            className="bg-green-500 hover:bg-green-600"
+          >
+            Step (Pass Ball)
+          </Button>
+          
+          <Button 
             onClick={resetSimulation}
-            className="px-6 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+            variant="outline"
           >
             Reset
-          </button>
+          </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2">
-            <FootballField matchState={matchState} />
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          <div className="lg:col-span-3">
+            <SimpleField 
+              simulation={simulation}
+              onPassHover={setHoveredPass}
+              onPassLeave={() => setHoveredPass(null)}
+            />
           </div>
           
           <div className="space-y-4">
             <div className="bg-white p-4 rounded shadow">
-              <h3 className="font-bold mb-2">Match Info</h3>
-              <p>Formation: 4-3-3</p>
-              <p>Tactics: Possession Game</p>
-              <p>Passes: {passCount}</p>
-              <p>Status: {goalScored ? '⚽ GOAL!' : isRunning ? '🟢 Running' : '⚪ Stopped'}</p>
+              <h3 className="font-bold mb-2">Status</h3>
+              <p>Formation: {formation}</p>
+              <p>Phase: {simulation.phase}</p>
+              {simulation.ballHolder && (
+                <p>Ball: {simulation.ballHolder.name} ({simulation.ballHolder.position})</p>
+              )}
             </div>
             
-            {matchState && (
-              <PassScoreDisplay 
-                ballHolder={matchState.ballHolder}
-                passOptions={matchState.passOptions}
-              />
+            {hoveredPass && (
+              <PassCalculationPanel passOption={hoveredPass} />
             )}
           </div>
         </div>

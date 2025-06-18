@@ -21,14 +21,19 @@ export interface PassOption {
   aiPreference: number;
 }
 
-export interface MatchState {
-  players: Player[];
-  ballHolder: Player;
-  passOptions: PassOption[];
-  currentPass: number;
+export interface Formation {
+  name: string;
+  positions: Array<{
+    position: string;
+    x: number;
+    y: number;
+  }>;
 }
 
-export interface MatchResult {
-  goalScored: boolean;
-  newState: MatchState;
+export interface SimulationState {
+  phase: 'setup' | 'playing' | 'pressure' | 'finished';
+  players: Player[];
+  ballHolder: Player | null;
+  passOptions: PassOption[];
+  pressureOpponents: Player[];
 }
