@@ -111,16 +111,21 @@ const calculateAiPreference = (ballHolder: Player, target: Player): number => {
 };
 
 export const calculatePassOptions = (ballHolder: Player, teammates: Player[], opponents: Player[]): PassOption[] => {
-  return teammates.map(teammate => {
+  console.log('Calculating pass options for:', ballHolder.name);
+  console.log('Number of teammates:', teammates.length);
+  
+  const passOptions = teammates.map(teammate => {
     const distance = calculateDistance(ballHolder, teammate);
     const opponentDensity = calculateOpponentDensity(teammate, opponents);
     const tacticalAlignment = calculateTacticalAlignment(ballHolder, teammate);
     const styleMatch = calculateStyleMatch(ballHolder, teammate);
     const aiPreference = calculateAiPreference(ballHolder, teammate);
     
-    // Scorepass formula: w1⋅Dij + w2⋅Oj + w3⋅Tij + w4⋅Pi + w5⋅Ai
-    const score = 0.2 * (100 - distance) + 0.2 * (100 - opponentDensity) + 
-                  0.2 * tacticalAlignment + 0.2 * styleMatch + 0.2 * aiPreference;
+    // Fixed formula: Lower score = better pass
+    const score = 0.2 * distance + 0.2 * opponentDensity + 
+                  0.2 * (100 - tacticalAlignment) + 0.2 * (100 - styleMatch) + 0.2 * (100 - aiPreference);
+    
+    console.log(`Pass to ${teammate.name}: score=${score.toFixed(2)}`);
     
     return {
       targetPlayer: teammate,
@@ -132,6 +137,9 @@ export const calculatePassOptions = (ballHolder: Player, teammates: Player[], op
       aiPreference
     };
   });
+  
+  console.log('Total pass options calculated:', passOptions.length);
+  return passOptions;
 };
 
 export const findNearestOpponents = (ballHolder: Player, opponents: Player[]): Player[] => {
@@ -150,8 +158,8 @@ export const moveOpponentsTowardsBall = (ballHolder: Player, opponents: Player[]
     const dy = ballHolder.y - opp.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
     
-    if (distance > 1) { // 1 meter threshold
-      const moveSpeed = 2;
+    if (distance > 5) { // Changed from 1 to 5 for easier testing
+      const moveSpeed = 3; // Increased speed
       const moveX = (dx / distance) * moveSpeed;
       const moveY = (dy / distance) * moveSpeed;
       

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -25,8 +24,15 @@ const Index = () => {
   const [hoveredPass, setHoveredPass] = useState<PassOption | null>(null);
 
   const startSimulation = () => {
+    console.log('Starting simulation with formation:', formation);
     const players = createTeams(formation);
-    const randomPlayer = players[Math.floor(Math.random() * players.length)];
+    console.log('Created players:', players.length);
+    
+    // Pick a random home team player (not goalkeeper)
+    const homeFieldPlayers = players.filter(p => p.team === 'home' && p.position !== 'GK');
+    const randomPlayer = homeFieldPlayers[Math.floor(Math.random() * homeFieldPlayers.length)];
+    
+    console.log('Selected ball holder:', randomPlayer.name);
     
     setSimulation({
       phase: 'playing',
@@ -50,7 +56,9 @@ const Index = () => {
       setSimulation(prev => ({
         ...prev,
         phase: 'finished',
-        ballHolder: bestPass.targetPlayer
+        ballHolder: bestPass.targetPlayer,
+        passOptions: [],
+        pressureOpponents: []
       }));
     }
   };
@@ -66,12 +74,17 @@ const Index = () => {
     setHoveredPass(null);
   };
 
-  // Handle opponent pressure after 3 seconds
+  // Handle opponent pressure after 2 seconds
   useEffect(() => {
     if (simulation.phase === 'playing' && simulation.ballHolder) {
+      console.log('Starting pressure sequence...');
+      
       const timer = setTimeout(() => {
+        console.log('Pressure timer triggered');
         const opponents = simulation.players.filter(p => p.team !== simulation.ballHolder!.team);
         const nearestOpponents = findNearestOpponents(simulation.ballHolder!, opponents);
+        
+        console.log('Found nearest opponents:', nearestOpponents.map(o => o.name));
         
         // Start moving opponents toward ball holder
         const interval = setInterval(() => {
@@ -81,14 +94,14 @@ const Index = () => {
               return prev;
             }
 
-            const updatedOpponents = moveOpponentsTowardsBall(prev.ballHolder!, nearestOpponents);
+            const ballHolder = prev.ballHolder!;
+            const updatedOpponents = moveOpponentsTowardsBall(ballHolder, nearestOpponents);
             const updatedPlayers = prev.players.map(player => {
               const updatedOpp = updatedOpponents.find(opp => opp.id === player.id);
               return updatedOpp || player;
             });
 
-            // Check if opponents are close enough (1 meter = ~3 units on our scale)
-            const ballHolder = prev.ballHolder!;
+            // Check if opponents are close enough (5 units = pressure trigger)
             const closestDistance = Math.min(
               ...updatedOpponents.map(opp => {
                 const dx = ballHolder.x - opp.x;
@@ -97,8 +110,11 @@ const Index = () => {
               })
             );
 
-            if (closestDistance <= 3) {
+            console.log('Closest opponent distance:', closestDistance);
+
+            if (closestDistance <= 8) { // Increased threshold for easier triggering
               clearInterval(interval);
+              console.log('Pressure triggered! Calculating pass options...');
               
               // Calculate pass options
               const teammates = updatedPlayers.filter(p => 
@@ -106,6 +122,8 @@ const Index = () => {
               );
               const allOpponents = updatedPlayers.filter(p => p.team !== ballHolder.team);
               const passOptions = calculatePassOptions(ballHolder, teammates, allOpponents);
+              
+              console.log('Pass options calculated:', passOptions.length);
               
               return {
                 ...prev,
@@ -121,8 +139,8 @@ const Index = () => {
               players: updatedPlayers
             };
           });
-        }, 100);
-      }, 3000);
+        }, 200); // Slower movement for better visualization
+      }, 2000); // Reduced from 3000 to 2000
 
       return () => clearTimeout(timer);
     }
@@ -185,6 +203,9 @@ const Index = () => {
               <p>Phase: {simulation.phase}</p>
               {simulation.ballHolder && (
                 <p>Ball: {simulation.ballHolder.name} ({simulation.ballHolder.position})</p>
+              )}
+              {simulation.passOptions.length > 0 && (
+                <p>Pass Options: {simulation.passOptions.length}</p>
               )}
             </div>
             
