@@ -21,7 +21,7 @@ const Index = () => {
     passOptions: [],
     pressureOpponents: []
   });
-  const [hoveredPass, setHoveredPass] = useState<PassOption | null>(null);
+  const [selectedPass, setSelectedPass] = useState<PassOption | null>(null);
 
   const startSimulation = () => {
     console.log('Starting simulation with formation:', formation);
@@ -71,7 +71,11 @@ const Index = () => {
       passOptions: [],
       pressureOpponents: []
     });
-    setHoveredPass(null);
+    setSelectedPass(null);
+  };
+
+  const handlePassClick = (passOption: PassOption) => {
+    setSelectedPass(passOption);
   };
 
   // Handle opponent pressure after 2 seconds
@@ -191,8 +195,7 @@ const Index = () => {
           <div className="lg:col-span-3">
             <SimpleField 
               simulation={simulation}
-              onPassHover={setHoveredPass}
-              onPassLeave={() => setHoveredPass(null)}
+              onPassClick={handlePassClick}
             />
           </div>
           
@@ -209,8 +212,8 @@ const Index = () => {
               )}
             </div>
             
-            {hoveredPass && (
-              <PassCalculationPanel passOption={hoveredPass} />
+            {selectedPass && (
+              <PassCalculationPanel passOption={selectedPass} />
             )}
           </div>
         </div>

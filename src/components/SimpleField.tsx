@@ -1,14 +1,12 @@
-
 import React from 'react';
 import { SimulationState, PassOption } from '@/types/football';
 
 interface SimpleFieldProps {
   simulation: SimulationState;
-  onPassHover: (pass: PassOption) => void;
-  onPassLeave: () => void;
+  onPassClick: (pass: PassOption) => void;
 }
 
-const SimpleField: React.FC<SimpleFieldProps> = ({ simulation, onPassHover, onPassLeave }) => {
+const SimpleField: React.FC<SimpleFieldProps> = ({ simulation, onPassClick }) => {
   if (simulation.phase === 'setup') {
     return (
       <div className="w-full h-96 bg-green-400 border-2 border-white rounded flex items-center justify-center">
@@ -54,7 +52,7 @@ const SimpleField: React.FC<SimpleFieldProps> = ({ simulation, onPassHover, onPa
         );
       })}
 
-      {/* Pass option arrows */}
+      {/* Pass option arrows - made bigger and clickable */}
       {ballHolder && passOptions.map((option, index) => {
         const dx = option.targetPlayer.x - ballHolder.x;
         const dy = option.targetPlayer.y - ballHolder.y;
@@ -70,33 +68,32 @@ const SimpleField: React.FC<SimpleFieldProps> = ({ simulation, onPassHover, onPa
         return (
           <div
             key={index}
-            className="absolute cursor-pointer"
+            className="absolute cursor-pointer hover:opacity-80"
             style={{
               left: `${ballHolder.x}%`,
               top: `${ballHolder.y}%`,
               width: `${length}%`,
-              height: '3px',
+              height: '6px', // Made thicker
               background: color,
               transformOrigin: '0 50%',
               transform: `rotate(${angle}deg)`,
               zIndex: 10,
             }}
-            onMouseEnter={() => onPassHover(option)}
-            onMouseLeave={onPassLeave}
-            title={`Pass to ${option.targetPlayer.name} - Score: ${option.score.toFixed(1)}`}
+            onClick={() => onPassClick(option)}
+            title={`Click to see calculation details - Pass to ${option.targetPlayer.name} - Score: ${option.score.toFixed(1)}`}
           >
             <div 
               className="absolute right-0 top-1/2 transform -translate-y-1/2"
               style={{
                 width: 0,
                 height: 0,
-                borderLeft: `8px solid ${color}`,
-                borderTop: '4px solid transparent',
-                borderBottom: '4px solid transparent',
+                borderLeft: `12px solid ${color}`, // Made bigger
+                borderTop: '6px solid transparent', // Made bigger
+                borderBottom: '6px solid transparent', // Made bigger
               }}
             />
             <div 
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs font-bold text-white bg-black bg-opacity-75 px-1 rounded"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm font-bold text-white bg-black bg-opacity-75 px-2 py-1 rounded" // Made bigger
             >
               {option.score.toFixed(1)}
             </div>

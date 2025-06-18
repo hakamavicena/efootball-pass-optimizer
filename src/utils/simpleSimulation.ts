@@ -1,15 +1,44 @@
-
 import { Player, PassOption, SimulationState } from '@/types/football';
 import { FORMATIONS, getAwayFormation } from './formations';
 
-const PLAYING_STYLES = [
-  'Goal Poacher', 'Target Man', 'Creative Playmaker', 'Classic No. 10', 'Cross Specialist',
-  'Box-To-Box', 'Anchor Man', 'Orchestrator', 'Build Up', 'Attacking Full Back'
-];
+const ROLE_PLAYING_STYLES = {
+  // Attacking Roles
+  'CF': ['Goal Poacher', 'Dummy Runner', 'Target Man', 'Deep Lying Forward'],
+  'SS': ['Dummy Runner', 'Deep Lying Forward', 'Creative Playmaker', 'Classic No. 10', 'Hole Player'],
+  'AMF': ['Dummy Runner', 'Creative Playmaker', 'Classic No. 10', 'Hole Player'],
+  
+  // Wide Roles
+  'RWF': ['Creative Playmaker', 'Prolific Winger', 'Roaming Flank', 'Cross Specialist'],
+  'LWF': ['Creative Playmaker', 'Prolific Winger', 'Roaming Flank', 'Cross Specialist'],
+  'RMF': ['Creative Playmaker', 'Hole Player', 'Roaming Flank', 'Cross Specialist', 'Box-To-Box'],
+  'LMF': ['Creative Playmaker', 'Hole Player', 'Roaming Flank', 'Cross Specialist', 'Box-To-Box'],
+  'RM': ['Creative Playmaker', 'Hole Player', 'Roaming Flank', 'Cross Specialist', 'Box-To-Box'],
+  'LM': ['Creative Playmaker', 'Hole Player', 'Roaming Flank', 'Cross Specialist', 'Box-To-Box'],
+  
+  // Midfield Roles
+  'CMF': ['Hole Player', 'Box-To-Box', 'The Destroyer', 'Orchestrator'],
+  'DMF': ['Box-To-Box', 'Anchor Man', 'The Destroyer', 'Orchestrator'],
+  
+  // Defensive Roles
+  'CB': ['The Destroyer', 'Build Up', 'Extra Frontman'],
+  'RB': ['Attacking Full Back', 'Defensive Full Back', 'Full Back Finisher'],
+  'LB': ['Attacking Full Back', 'Defensive Full Back', 'Full Back Finisher'],
+  
+  // Goalkeeper Roles
+  'GK': ['Attacking Goalkeeper', 'Defensive Goalkeeper']
+};
 
 const AI_STYLES = [
   'Trickster', 'Long Ball Expert', 'Early Crosser', 'Speeding Bullet', 'Incisive Run'
 ];
+
+const getPlayingStyleForPosition = (position: string): string => {
+  const styles = ROLE_PLAYING_STYLES[position];
+  if (!styles || styles.length === 0) {
+    return 'Standard'; // fallback
+  }
+  return styles[Math.floor(Math.random() * styles.length)];
+};
 
 export const createTeams = (formationName: string): Player[] => {
   const homeFormation = FORMATIONS[formationName];
@@ -19,7 +48,7 @@ export const createTeams = (formationName: string): Player[] => {
 
   // Create home team
   homeFormation.positions.forEach((pos, index) => {
-    const playingStyle = PLAYING_STYLES[index % PLAYING_STYLES.length];
+    const playingStyle = getPlayingStyleForPosition(pos.position);
     const aiStyle = AI_STYLES[index % AI_STYLES.length];
     
     players.push({
@@ -38,7 +67,7 @@ export const createTeams = (formationName: string): Player[] => {
 
   // Create away team
   awayFormation.positions.forEach((pos, index) => {
-    const playingStyle = PLAYING_STYLES[index % PLAYING_STYLES.length];
+    const playingStyle = getPlayingStyleForPosition(pos.position);
     const aiStyle = AI_STYLES[index % AI_STYLES.length];
     
     players.push({
