@@ -37,3 +37,15 @@ export interface SimulationState {
   passOptions: PassOption[];
   pressureOpponents: Player[];
 }
+
+export interface MatchState {
+  players: Player[];
+  ballHolder: Player;
+  passOptions: PassOption[];
+  currentPass: number;
+}
+
+export interface MatchResult {
+  goalScored: boolean;
+  newState: MatchState;
+}
