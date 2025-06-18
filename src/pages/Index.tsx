@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -12,8 +13,17 @@ import {
   moveOpponentsTowardsBall 
 } from '@/utils/simpleSimulation';
 
+const TACTICS = [
+  'Possession Game',
+  'Quick Counter', 
+  'Long Ball Counter',
+  'Out Wide',
+  'Long Ball'
+];
+
 const Index = () => {
   const [formation, setFormation] = useState('4-3-3');
+  const [tactic, setTactic] = useState('Possession Game');
   const [simulation, setSimulation] = useState<SimulationState>({
     phase: 'setup',
     players: [],
@@ -24,7 +34,7 @@ const Index = () => {
   const [selectedPass, setSelectedPass] = useState<PassOption | null>(null);
 
   const startSimulation = () => {
-    console.log('Starting simulation with formation:', formation);
+    console.log('Starting simulation with formation:', formation, 'and tactic:', tactic);
     const players = createTeams(formation);
     console.log('Created players:', players.length);
     
@@ -90,7 +100,6 @@ const Index = () => {
         
         console.log('Found nearest opponents:', nearestOpponents.map(o => o.name));
         
-        // Start moving opponents toward ball holder
         const interval = setInterval(() => {
           setSimulation(prev => {
             if (prev.phase !== 'playing') {
@@ -105,7 +114,6 @@ const Index = () => {
               return updatedOpp || player;
             });
 
-            // Check if opponents are close enough (5 units = pressure trigger)
             const closestDistance = Math.min(
               ...updatedOpponents.map(opp => {
                 const dx = ballHolder.x - opp.x;
@@ -116,16 +124,15 @@ const Index = () => {
 
             console.log('Closest opponent distance:', closestDistance);
 
-            if (closestDistance <= 8) { // Increased threshold for easier triggering
+            if (closestDistance <= 8) {
               clearInterval(interval);
               console.log('Pressure triggered! Calculating pass options...');
               
-              // Calculate pass options
               const teammates = updatedPlayers.filter(p => 
                 p.team === ballHolder.team && p.id !== ballHolder.id
               );
               const allOpponents = updatedPlayers.filter(p => p.team !== ballHolder.team);
-              const passOptions = calculatePassOptions(ballHolder, teammates, allOpponents);
+              const passOptions = calculatePassOptions(ballHolder, teammates, allOpponents, tactic);
               
               console.log('Pass options calculated:', passOptions.length);
               
@@ -143,12 +150,12 @@ const Index = () => {
               players: updatedPlayers
             };
           });
-        }, 200); // Slower movement for better visualization
-      }, 2000); // Reduced from 3000 to 2000
+        }, 200);
+      }, 2000);
 
       return () => clearTimeout(timer);
     }
-  }, [simulation.phase, simulation.ballHolder]);
+  }, [simulation.phase, simulation.ballHolder, tactic]);
 
   return (
     <div className="min-h-screen bg-green-100 p-4">
@@ -163,6 +170,17 @@ const Index = () => {
             <SelectContent>
               {Object.keys(FORMATIONS).map(form => (
                 <SelectItem key={form} value={form}>{form}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={tactic} onValueChange={setTactic} disabled={simulation.phase !== 'setup'}>
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TACTICS.map(tacticOption => (
+                <SelectItem key={tacticOption} value={tacticOption}>{tacticOption}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -203,6 +221,7 @@ const Index = () => {
             <div className="bg-white p-4 rounded shadow">
               <h3 className="font-bold mb-2">Status</h3>
               <p>Formation: {formation}</p>
+              <p>Tactic: {tactic}</p>
               <p>Phase: {simulation.phase}</p>
               {simulation.ballHolder && (
                 <p>Ball: {simulation.ballHolder.name} ({simulation.ballHolder.position})</p>
