@@ -159,17 +159,11 @@ const calculatePlayerStyleMatch = (ballHolder: Player, target: Player, tactic: s
 const calculateAiPreference = (ballHolder: Player, target: Player, tactic: string): number => {
   const distance = calculateDistance(ballHolder, target);
   
-  // AI style preferences for ball holder
+  // AI style preferences for ball holder - only Long Ball Expert and Early Crosser get boosts
   if (ballHolder.aiStyle === 'Long Ball Expert' && distance > 40) {
     return 80;
   }
   if (ballHolder.aiStyle === 'Early Crosser' && target.position.includes('WF')) {
-    return 80;
-  }
-  if (ballHolder.aiStyle === 'Mazing Run' && distance < 20) {
-    return 80;
-  }
-  if (ballHolder.aiStyle === 'Long Ranger' && distance > 50) {
     return 80;
   }
   
@@ -186,9 +180,15 @@ const calculateAiPreference = (ballHolder: Player, target: Player, tactic: strin
 
 export const calculatePassOptions = (ballHolder: Player, teammates: Player[], opponents: Player[], tactic: string = 'Possession Game'): PassOption[] => {
   console.log('Calculating pass options for:', ballHolder.name, 'with tactic:', tactic);
-  console.log('Number of teammates:', teammates.length);
   
-  const passOptions = teammates.map(teammate => {
+  // Ensure we only pass to actual teammates (same team, different player)
+  const validTeammates = teammates.filter(teammate => 
+    teammate.team === ballHolder.team && teammate.id !== ballHolder.id
+  );
+  
+  console.log('Number of valid teammates:', validTeammates.length);
+  
+  const passOptions = validTeammates.map(teammate => {
     // Formula: w1⋅Dij + w2⋅Oj + w3⋅(100-Tij) + w4⋅(100-Pi) + w5⋅(100-Ai)
     const w1 = 0.2, w2 = 0.2, w3 = 0.2, w4 = 0.2, w5 = 0.2;
     

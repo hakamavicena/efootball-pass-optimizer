@@ -4,9 +4,15 @@ import { PassOption } from '@/types/football';
 
 interface PassCalculationPanelProps {
   passOption: PassOption;
+  ballHolder?: {
+    name: string;
+    position: string;
+    playingStyle: string;
+    aiStyle: string;
+  } | null;
 }
 
-const PassCalculationPanel: React.FC<PassCalculationPanelProps> = ({ passOption }) => {
+const PassCalculationPanel: React.FC<PassCalculationPanelProps> = ({ passOption, ballHolder }) => {
   const { targetPlayer, score, distance, opponentDensity, tacticalAlignment, styleMatch, aiPreference } = passOption;
 
   // Formula weights
@@ -16,9 +22,20 @@ const PassCalculationPanel: React.FC<PassCalculationPanelProps> = ({ passOption 
     <div className="bg-white p-4 rounded shadow border-l-4 border-blue-500">
       <h3 className="font-bold mb-3 text-lg">Pass Calculation (Directed Graph)</h3>
       
-      <div className="mb-3">
-        <p className="font-semibold text-blue-600">{targetPlayer.name}</p>
+      {/* Ball Holder Info */}
+      {ballHolder && (
+        <div className="mb-3 p-2 bg-blue-50 rounded">
+          <p className="font-semibold text-blue-700">Ball Holder: {ballHolder.name}</p>
+          <p className="text-sm text-gray-600">{ballHolder.position} - {ballHolder.playingStyle}</p>
+          <p className="text-sm text-gray-600">AI Style: {ballHolder.aiStyle}</p>
+        </div>
+      )}
+      
+      {/* Target Player Info */}
+      <div className="mb-3 p-2 bg-green-50 rounded">
+        <p className="font-semibold text-green-700">Target: {targetPlayer.name}</p>
         <p className="text-sm text-gray-600">{targetPlayer.position} - {targetPlayer.playingStyle}</p>
+        <p className="text-sm text-gray-600">AI Style: {targetPlayer.aiStyle}</p>
       </div>
 
       <div className="space-y-2 text-sm">

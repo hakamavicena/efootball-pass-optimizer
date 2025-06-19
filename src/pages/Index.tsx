@@ -232,7 +232,15 @@ const Index = () => {
             </div>
             
             {selectedPass && (
-              <PassCalculationPanel passOption={selectedPass} />
+              <PassCalculationPanel 
+                passOption={selectedPass} 
+                ballHolder={simulation.ballHolder ? {
+                  name: simulation.ballHolder.name,
+                  position: simulation.ballHolder.position,
+                  playingStyle: simulation.ballHolder.playingStyle,
+                  aiStyle: simulation.ballHolder.aiStyle
+                } : null}
+              />
             )}
           </div>
         </div>
