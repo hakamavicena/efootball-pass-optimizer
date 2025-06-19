@@ -1,4 +1,3 @@
-
 import { Player, PassOption, SimulationState } from '@/types/football';
 import { FORMATIONS, getAwayFormation } from './formations';
 
@@ -116,24 +115,37 @@ const calculateOpponentDensity = (player: Player, opponents: Player[]): number =
 };
 
 const calculateTacticalAlignment = (ballHolder: Player, target: Player, tactic: string): number => {
-  const forwardProgress = target.x > ballHolder.x ? 20 : 0;
+  const forwardProgress = target.x > ballHolder.x ? 1 : 0; // 1 if forward, 0 if backward
   const distance = calculateDistance(ballHolder, target);
+  
+  let alignment = 50; // base alignment
   
   switch (tactic) {
     case 'Possession Game':
-      return Math.min(100, forwardProgress + (distance < 30 ? 30 : 10) + 20);
+      // Reward short forward passes and nearby players
+      alignment = forwardProgress * 40 + (distance < 30 ? 30 : 10) + 20;
+      break;
     case 'Quick Counter':
-      return Math.min(100, forwardProgress * 2 + (distance > 40 ? 20 : 0) + 10);
+      // Heavily reward forward passes, especially longer ones
+      alignment = forwardProgress * 50 + (distance > 40 ? 30 : 10) + 10;
+      break;
     case 'Long Ball Counter':
-      return Math.min(100, forwardProgress + (distance > 50 ? 40 : 0) + 10);
+      // Reward long forward passes
+      alignment = forwardProgress * 40 + (distance > 50 ? 40 : 0) + 10;
+      break;
     case 'Out Wide':
-      const isWidePosition = target.position.includes('WF') || target.position.includes('MF');
-      return Math.min(100, forwardProgress + (isWidePosition ? 30 : 0) + 20);
+      const isWidePosition = target.position.includes('WF') || target.position.includes('MF') || target.position.includes('WB');
+      alignment = forwardProgress * 30 + (isWidePosition ? 40 : 0) + 20;
+      break;
     case 'Long Ball':
-      return Math.min(100, forwardProgress + (distance > 60 ? 50 : 0) + 10);
+      // Heavily reward very long forward passes
+      alignment = forwardProgress * 30 + (distance > 60 ? 50 : 0) + 10;
+      break;
     default:
-      return Math.min(100, forwardProgress + (distance < 30 ? 30 : 10) + 20);
+      alignment = forwardProgress * 40 + (distance < 30 ? 30 : 10) + 20;
   }
+  
+  return Math.min(100, alignment);
 };
 
 const calculatePlayerStyleMatch = (ballHolder: Player, target: Player, tactic: string): number => {
