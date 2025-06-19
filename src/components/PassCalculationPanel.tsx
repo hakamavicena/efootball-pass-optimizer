@@ -9,6 +9,7 @@ interface PassCalculationPanelProps {
     position: string;
     playingStyle: string;
     aiStyle: string;
+    passingAccuracy: number;
   } | null;
 }
 
@@ -28,6 +29,7 @@ const PassCalculationPanel: React.FC<PassCalculationPanelProps> = ({ passOption,
           <p className="font-semibold text-blue-700">Ball Holder: {ballHolder.name}</p>
           <p className="text-sm text-gray-600">{ballHolder.position} - {ballHolder.playingStyle}</p>
           <p className="text-sm text-gray-600">AI Style: {ballHolder.aiStyle}</p>
+          <p className="text-sm text-blue-600 font-medium">Passing Accuracy: {ballHolder.passingAccuracy}%</p>
         </div>
       )}
       
@@ -63,7 +65,7 @@ const PassCalculationPanel: React.FC<PassCalculationPanelProps> = ({ passOption,
           </div>
           
           <div className="flex justify-between">
-            <span>Player Style (100-Pi) (w4=0.2):</span>
+            <span>Ball Holder Style (100-Pi) (w4=0.2):</span>
             <span>{styleMatch.toFixed(1)} → {(w4 * (100 - styleMatch)).toFixed(2)}</span>
           </div>
           
@@ -78,7 +80,8 @@ const PassCalculationPanel: React.FC<PassCalculationPanelProps> = ({ passOption,
         <div className="text-xs text-gray-500">
           <p className="font-semibold">Formula: w1⋅Dij + w2⋅Oj + w3⋅(100-Tij) + w4⋅(100-Pi) + w5⋅(100-Ai)</p>
           <p className="mt-1">Lower score = Better pass option</p>
-          <p className="mt-1 text-blue-600">Graph: Directed edge from ball holder → target</p>
+          <p className="mt-1 text-blue-600">Algorithm Complexity: O(n×m) where n=teammates, m=opponents</p>
+          <p className="mt-1 text-orange-600">Pi now based on ball holder's playing style & passing accuracy</p>
         </div>
       </div>
     </div>

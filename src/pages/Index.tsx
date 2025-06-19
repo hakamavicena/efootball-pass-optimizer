@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -236,7 +235,10 @@ const Index = () => {
               <p>Tactic: {tactic}</p>
               <p>Phase: {simulation.phase}</p>
               {simulation.ballHolder && (
-                <p>Ball: {simulation.ballHolder.name} ({simulation.ballHolder.position})</p>
+                <>
+                  <p>Ball: {simulation.ballHolder.name} ({simulation.ballHolder.position})</p>
+                  <p className="text-sm text-blue-600">Accuracy: {simulation.ballHolder.passingAccuracy}%</p>
+                </>
               )}
               {simulation.passOptions.length > 0 && (
                 <p>Pass Options: {simulation.passOptions.length}</p>
@@ -250,7 +252,8 @@ const Index = () => {
                   name: simulation.ballHolder.name,
                   position: simulation.ballHolder.position,
                   playingStyle: simulation.ballHolder.playingStyle,
-                  aiStyle: simulation.ballHolder.aiStyle
+                  aiStyle: simulation.ballHolder.aiStyle,
+                  passingAccuracy: simulation.ballHolder.passingAccuracy
                 } : null}
               />
             )}
