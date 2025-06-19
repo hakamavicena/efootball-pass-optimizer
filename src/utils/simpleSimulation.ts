@@ -1,3 +1,4 @@
+
 import { Player, PassOption, SimulationState } from '@/types/football';
 import { FORMATIONS, getAwayFormation } from './formations';
 
@@ -135,27 +136,30 @@ const calculateTacticalAlignment = (ballHolder: Player, target: Player, tactic: 
   }
 };
 
-const calculateStyleMatch = (ballHolder: Player, target: Player, tactic: string): number => {
-  let boost = target.passingAccuracy > 80 ? 20 : 0;
+const calculatePlayerStyleMatch = (ballHolder: Player, target: Player, tactic: string): number => {
+  let boost = 50; // base score
   
-  // Tactic-specific boosts
-  if (tactic === 'Long Ball' && ballHolder.aiStyle === 'Long Ball Expert') {
+  // Playing style boosts for target player
+  if (['Creative Playmaker', 'Classic No. 10', 'Orchestrator'].includes(target.playingStyle)) {
     boost += 20;
   }
-  if (tactic === 'Out Wide' && ballHolder.aiStyle === 'Early Crosser') {
-    boost += 20;
+  if (['Prolific Winger', 'Cross Specialist'].includes(target.playingStyle) && tactic === 'Out Wide') {
+    boost += 15;
   }
-  if (tactic === 'Quick Counter' && ballHolder.aiStyle === 'Speeding Bullet') {
-    boost += 20;
+  if (['Deep Lying Forward', 'Target Man'].includes(target.playingStyle) && tactic === 'Long Ball') {
+    boost += 15;
+  }
+  if (['Box-To-Box', 'Hole Player'].includes(target.playingStyle) && tactic === 'Possession Game') {
+    boost += 15;
   }
   
-  return Math.min(100, 50 + boost + Math.random() * 20);
+  return Math.min(100, boost + Math.random() * 20);
 };
 
 const calculateAiPreference = (ballHolder: Player, target: Player, tactic: string): number => {
   const distance = calculateDistance(ballHolder, target);
   
-  // AI style preferences
+  // AI style preferences for ball holder
   if (ballHolder.aiStyle === 'Long Ball Expert' && distance > 40) {
     return 80;
   }
@@ -185,15 +189,18 @@ export const calculatePassOptions = (ballHolder: Player, teammates: Player[], op
   console.log('Number of teammates:', teammates.length);
   
   const passOptions = teammates.map(teammate => {
-    const distance = calculateDistance(ballHolder, teammate);
-    const opponentDensity = calculateOpponentDensity(teammate, opponents);
-    const tacticalAlignment = calculateTacticalAlignment(ballHolder, teammate, tactic);
-    const styleMatch = calculateStyleMatch(ballHolder, teammate, tactic);
-    const aiPreference = calculateAiPreference(ballHolder, teammate, tactic);
+    // Formula: w1⋅Dij + w2⋅Oj + w3⋅(100-Tij) + w4⋅(100-Pi) + w5⋅(100-Ai)
+    const w1 = 0.2, w2 = 0.2, w3 = 0.2, w4 = 0.2, w5 = 0.2;
     
-    // Lower score = better pass
-    const score = 0.2 * distance + 0.2 * opponentDensity + 
-                  0.2 * (100 - tacticalAlignment) + 0.2 * (100 - styleMatch) + 0.2 * (100 - aiPreference);
+    const distance = calculateDistance(ballHolder, teammate); // Dij
+    const opponentDensity = calculateOpponentDensity(teammate, opponents); // Oj
+    const tacticalAlignment = calculateTacticalAlignment(ballHolder, teammate, tactic); // Tij
+    const playerStyleMatch = calculatePlayerStyleMatch(ballHolder, teammate, tactic); // Pi
+    const aiPreference = calculateAiPreference(ballHolder, teammate, tactic); // Ai
+    
+    // Apply the correct formula: lower score = better pass
+    const score = w1 * distance + w2 * opponentDensity + 
+                  w3 * (100 - tacticalAlignment) + w4 * (100 - playerStyleMatch) + w5 * (100 - aiPreference);
     
     console.log(`Pass to ${teammate.name}: score=${score.toFixed(2)}`);
     
@@ -203,7 +210,7 @@ export const calculatePassOptions = (ballHolder: Player, teammates: Player[], op
       distance,
       opponentDensity,
       tacticalAlignment,
-      styleMatch,
+      styleMatch: playerStyleMatch,
       aiPreference
     };
   });

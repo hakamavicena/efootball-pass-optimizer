@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -88,7 +87,7 @@ const Index = () => {
     setSelectedPass(passOption);
   };
 
-  // Handle opponent pressure after 2 seconds
+  // Handle opponent pressure and ensure ball is always passed
   useEffect(() => {
     if (simulation.phase === 'playing' && simulation.ballHolder) {
       console.log('Starting pressure sequence...');
@@ -124,7 +123,8 @@ const Index = () => {
 
             console.log('Closest opponent distance:', closestDistance);
 
-            if (closestDistance <= 8) {
+            // Always trigger pressure after opponents have moved enough (increased threshold to ensure pass)
+            if (closestDistance <= 12) {
               clearInterval(interval);
               console.log('Pressure triggered! Calculating pass options...');
               
@@ -150,8 +150,8 @@ const Index = () => {
               players: updatedPlayers
             };
           });
-        }, 200);
-      }, 2000);
+        }, 150); // Slightly faster movement for better gameplay
+      }, 1500); // Reduced timer for quicker pressure
 
       return () => clearTimeout(timer);
     }
