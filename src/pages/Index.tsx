@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import SimpleField from '@/components/SimpleField';
 import PassCalculationPanel from '@/components/PassCalculationPanel';
+import FinishedPhasePanel from '@/components/FinishedPhasePanel';
 import { SimulationState, PassOption } from '@/types/football';
 import { FORMATIONS } from '@/utils/formations';
 import { 
@@ -31,6 +33,8 @@ const Index = () => {
     pressureOpponents: []
   });
   const [selectedPass, setSelectedPass] = useState<PassOption | null>(null);
+  const [executedPass, setExecutedPass] = useState<PassOption | null>(null);
+  const [previousBallHolder, setPreviousBallHolder] = useState<any>(null);
 
   const startSimulation = () => {
     console.log('Starting simulation with formation:', formation, 'and tactic:', tactic);
@@ -50,6 +54,8 @@ const Index = () => {
       passOptions: [],
       pressureOpponents: []
     });
+    setExecutedPass(null);
+    setPreviousBallHolder(null);
   };
 
   const stepSimulation = () => {
@@ -61,6 +67,10 @@ const Index = () => {
       
       console.log(`Ball passed from ${simulation.ballHolder?.name} to ${bestPass.targetPlayer.name}`);
       console.log(`Pass score: ${bestPass.score.toFixed(2)}`);
+      
+      // Store the executed pass and previous ball holder for the finished panel
+      setExecutedPass(bestPass);
+      setPreviousBallHolder(simulation.ballHolder);
       
       setSimulation(prev => ({
         ...prev,
@@ -81,6 +91,8 @@ const Index = () => {
       pressureOpponents: []
     });
     setSelectedPass(null);
+    setExecutedPass(null);
+    setPreviousBallHolder(null);
   };
 
   const handlePassClick = (passOption: PassOption) => {
@@ -231,7 +243,7 @@ const Index = () => {
               )}
             </div>
             
-            {selectedPass && (
+            {selectedPass && simulation.phase === 'pressure' && (
               <PassCalculationPanel 
                 passOption={selectedPass} 
                 ballHolder={simulation.ballHolder ? {
@@ -240,6 +252,13 @@ const Index = () => {
                   playingStyle: simulation.ballHolder.playingStyle,
                   aiStyle: simulation.ballHolder.aiStyle
                 } : null}
+              />
+            )}
+            
+            {executedPass && previousBallHolder && simulation.phase === 'finished' && (
+              <FinishedPhasePanel 
+                ballHolder={previousBallHolder}
+                executedPass={executedPass}
               />
             )}
           </div>
